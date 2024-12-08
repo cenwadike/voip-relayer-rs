@@ -1,0 +1,12 @@
+[package]
+name = "voip-relayer-rs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anchor-client = { version = "0.30.1", features = ["async"] }
+dotenv = "0.15.0"
+hex-literal = "0.4.1"
+tokio = { version = "1.42.0", features = ["full"] }
+voip-migration = { git = "https://github.com/cenwadike/voip-migration.git" }
+web3 = "0.19.0"
