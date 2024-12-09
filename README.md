@@ -19,7 +19,6 @@ To run the script, you need to:
 - Deploy relevant contracts with wallet.
 - Configure the script by updating `.env` file.
   - Check [Configuration](#configuration) section below.
-- Install dependencies by running: `npm i`.
 - Compile by running `cargo build`.
 - Run the script by running `cargo run` in terminal.
 - If you prefer to run this in docker, you can either use:
@@ -45,6 +44,5 @@ To run the script, you need to:
 
 - ETH_VOIP_TOKEN_ADDRESS
 - ETH_BRIDGE_CONTRACT_ADDRESS
-- SOL_VOIP_TOKEN_PROGRAM_ID
 - SOL_VOIP_TOKEN_MINT
 - SOL_MIGRATION_PROGRAM_ID

@@ -8,7 +8,6 @@ use anchor_client::{
     },
     Client, Cluster,
 };
-
 use dotenv::dotenv;
 use hex_literal::hex;
 use std::env;
@@ -45,8 +44,6 @@ async fn main() {
         env::var("ETH_VOIP_TOKEN_ADDRESS").expect("Failed to get ETH_VOIP_TOKEN_ADDRESS");
     let eth_voip_bridge_address =
         env::var("ETH_BRIDGE_CONTRACT_ADDRESS").expect("Failed to get ETH_BRIDGE_CONTRACT_ADDRESS");
-    let sol_voip_token_address =
-        env::var("SOL_VOIP_TOKEN_PROGRAM_ID").expect("Failed to get SOL_VOIP_TOKEN_PROGRAM_ID");
     let sol_voip_mint_address =
         env::var("SOL_VOIP_TOKEN_MINT").expect("Failed to get SOL_VOIP_TOKEN_MINT");
     let sol_voip_migration_address =
@@ -72,7 +69,7 @@ async fn main() {
                              V:::V           
                               VVV                                          
                   
-                VOIP FINANCE RELAYER ACTIVATED 🚀🐟
+                VOIP FINANCE RELAYER ACTIVATED 🚀
                       Made with ❤️ by Kombi.         
     "
     );
@@ -115,12 +112,6 @@ async fn main() {
     );
     println!(
         "
-        SOL Token Program ID: {}
-        ",
-        sol_voip_token_address
-    );
-    println!(
-        "
         ETH Token Address: {}
         ",
         eth_voip_token_address
@@ -143,28 +134,21 @@ async fn main() {
               Failed to parse solana VOIP mint 
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 Status:      Failed❌
-        "
+        ",
     );
-
-    let _sol_voip_token_program_id = Pubkey::from_str(&sol_voip_token_address).expect("
-        
-            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            Failed to parse solana VOIP program id 
-            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                Status:      Failed❌
-
-    ");
 
     let sol_admin_pubkey = sol_admin_keypair.pubkey();
 
-    let eth_admin_private_key = signing::SecretKey::from_str(&eth_admin_private_key).expect("
+    let eth_admin_private_key = signing::SecretKey::from_str(&eth_admin_private_key).expect(
+        "
         
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
               Failed to parse admin private key
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     Status:      Failed❌
         
-    ");
+    ",
+    );
 
     let _ = run_relayer(
         &eth_wss_rpc_endpoint,
@@ -181,8 +165,6 @@ async fn main() {
     .await;
 }
 
-
-// #[allow(unused_variables)]
 async fn run_relayer(
     eth_rpc_endpoint: &str,
     eth_http_rpc_endpoint: &str,
@@ -216,8 +198,8 @@ async fn run_relayer(
     // set up websocket transport layer
     let http_transport = web3::transports::Http::new(eth_http_rpc_endpoint);
 
-    // set up websocket connection
-    let http_web3 = match http_transport {
+    // set up http connection
+    let http_web3: web3::Web3<web3::transports::Http> = match http_transport {
         Ok(http) => web3::Web3::new(http),
         Err(err) => panic!(
             "
@@ -276,13 +258,15 @@ async fn run_relayer(
                     Status:      Failed❌
         ",
     );
-    let program = client.program(voip_migration_program_id).expect("
+    let program = client.program(voip_migration_program_id).expect(
+        "
     
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             Failed to get solana migration program
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     Status:      Failed❌
-        ");
+        ",
+    );
 
     // --------------------- Set up sol constants --------------------- //
     // solana token program id
@@ -292,25 +276,29 @@ async fn run_relayer(
                Failed to parse token program id
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     Status:      Failed❌
-        "
+        ",
     );
 
     // solana system program id
-    let system_program_id = Pubkey::from_str("11111111111111111111111111111111").expect("
+    let system_program_id = Pubkey::from_str("11111111111111111111111111111111").expect(
+        "
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                Failed to parse system program id
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     Status:      Failed❌
-    ");
+    ",
+    );
 
     // solana associated token program id
     let associated_token_program_id =
-        Pubkey::from_str("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL").expect("
+        Pubkey::from_str("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL").expect(
+            "
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             Failed to parse associated program id
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     Status:      Failed❌
-    ");
+    ",
+        );
 
     // get state PDA
     let (state_pda, _) = Pubkey::find_program_address(&[&b"state"[..]], &voip_migration_program_id);
@@ -538,7 +526,8 @@ async fn run_relayer(
                                     match eth_burn_receipt {
                                         Ok(receipt_rs) => match receipt_rs {
                                             Ok(receipt) => {
-                                                let receipt_hash = receipt.transaction_hash;
+                                                let receipt_hash =
+                                                    receipt.transaction_hash.to_string();
                                                 println!(
                                                     "
                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -550,6 +539,19 @@ async fn run_relayer(
                                                                 TX Status:    Success✅
 
                                                         "
+                                                );
+                                                println!(
+                                                    "
+                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                          Processed New Migration 💥
+                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                            ETH Address:  {eth_address}
+                                                            Sol Address:  {solana_address}
+                                                            Amount:       {amount}
+                                                            Sol Tx Hash:  {signature}
+                                                            Eth Tx Hash:  {receipt_hash}
+                                                            Status:       Success✅
+                                                "
                                                 );
                                             }
                                             Err(err) => {
@@ -658,7 +660,11 @@ async fn migrate(
     Result<anchor_client::solana_sdk::signature::Signature, anchor_client::ClientError>,
     Box<dyn std::error::Error>,
 > {
+    // --------------------- set up ATAs --------------------- //
+    // admin ata
     let admin_ata = sol_admin_ata;
+
+    // derive destination ata
     let (destination_ata, _) = Pubkey::find_program_address(
         &[
             &solana_address.as_ref(),
@@ -668,13 +674,17 @@ async fn migrate(
         &associated_token_program_id,
     );
 
+    // check if derived account has been created
     let destination_account = connection.get_account(&destination_ata);
+
+    // create destination ATA if it does not exist
     if destination_account.is_err() {
+        // get recent block hash
         let recent_blockhash = connection.get_latest_blockhash();
-        let mut hash = Hash::default();
+        let mut latest_blockhash = Hash::default();
         match recent_blockhash {
-            Ok(_hash) => {
-                hash = _hash;
+            Ok(hash) => {
+                latest_blockhash = hash;
             }
             Err(err) => {
                 println!(
@@ -688,7 +698,9 @@ async fn migrate(
                 )
             }
         }
-        let ix = Instruction {
+
+        // construct create destination ATA instruction
+        let create_destination_ata_ix = Instruction {
             program_id: associated_token_program_id.clone(),
             accounts: vec![
                 AccountMeta::new(sol_admin_pubkey.clone(), true),
@@ -701,18 +713,36 @@ async fn migrate(
             data: vec![0],
         };
 
-        let mut transaction = Transaction::new_with_payer(&[ix], Some(&sol_admin_pubkey));
-        transaction.sign(&[&sol_admin_keypair], hash);
+        // create create destination ATA transaction
+        let mut transaction =
+            Transaction::new_with_payer(&[create_destination_ata_ix], Some(&sol_admin_pubkey));
 
+        // sign create destination ATA transaction
+        transaction.sign(&[&sol_admin_keypair], latest_blockhash);
+
+        // send and confirm transaction
         match connection.send_and_confirm_transaction(&transaction) {
             Ok(signature) => {
                 println!(
-                    "Created associated token account, transaction signature: {}",
-                    signature
+                    "
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        Created associated token account
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            Status:      Failed✅
+                            Tx Hash:     {signature}
+                    ",
                 );
             }
-            Err(e) => {
-                println!("Failed to create associated token account: {:?}", e);
+            Err(err) => {
+                println!(
+                    "
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    Failed to create associated token account
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            Status:      Failed❌
+                            Error:       {err}
+                "
+                );
             }
         }
     }
@@ -723,6 +753,7 @@ async fn migrate(
         &sol_voip_migration_program_id,
     );
 
+    // call migrate function
     let migrate_transaction_hash = program
         .request()
         .accounts(voip_migration::accounts::Migrate {
