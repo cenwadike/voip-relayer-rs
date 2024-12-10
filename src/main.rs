@@ -40,8 +40,6 @@ async fn main() {
         env::var("ETHEREUM_WSS_RPC_ENDPOINT").expect("Failed to get ETHEREUM_WSS_RPC_ENDPOINT");
     let eth_http_rpc_endpoint =
         env::var("ETHEREUM_HTTP_RPC_ENDPOINT").expect("Failed to get ETHEREUM_HTTP_RPC_ENDPOINT");
-    let eth_voip_token_address =
-        env::var("ETH_VOIP_TOKEN_ADDRESS").expect("Failed to get ETH_VOIP_TOKEN_ADDRESS");
     let eth_voip_bridge_address =
         env::var("ETH_BRIDGE_CONTRACT_ADDRESS").expect("Failed to get ETH_BRIDGE_CONTRACT_ADDRESS");
     let sol_voip_mint_address =
@@ -110,12 +108,6 @@ async fn main() {
         ",
         sol_voip_mint_address
     );
-    println!(
-        "
-        ETH Token Address: {}
-        ",
-        eth_voip_token_address
-    );
 
     println!(
         "
@@ -166,7 +158,7 @@ async fn main() {
 }
 
 async fn run_relayer(
-    eth_rpc_endpoint: &str,
+    eth_wss_rpc_endpoint: &str,
     eth_http_rpc_endpoint: &str,
     eth_voip_bridge_address: &str,
     eth_admin_private_key: &signing::SecretKey,
@@ -179,7 +171,7 @@ async fn run_relayer(
 ) -> web3::contract::Result<()> {
     // --------------------- Set up eth connections --------------------- //
     // set up websocket transport layer
-    let wss_transport = web3::transports::WebSocket::new(eth_rpc_endpoint).await;
+    let wss_transport = web3::transports::WebSocket::new(eth_wss_rpc_endpoint).await;
 
     // set up websocket connection
     let web3 = match wss_transport {
@@ -195,7 +187,7 @@ async fn run_relayer(
         ),
     };
 
-    // set up websocket transport layer
+    // set up http transport layer
     let http_transport = web3::transports::Http::new(eth_http_rpc_endpoint);
 
     // set up http connection
@@ -218,7 +210,7 @@ async fn run_relayer(
         Ok(address) => Contract::from_json(
             http_web3.eth(),
             address,
-            include_bytes!("../artifacts/eth/bridge/bridge.json"),
+            include_bytes!("../artifacts/eth/bridge/bridge.json")
         )?,
         Err(err) => panic!(
             "
@@ -728,7 +720,7 @@ async fn migrate(
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         Created associated token account
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                            Status:      Failed✅
+                            Status:      Success✅
                             Tx Hash:     {signature}
                     ",
                 );

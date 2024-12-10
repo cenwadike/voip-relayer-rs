@@ -3,6 +3,10 @@ name = "voip-relayer-rs"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "voip-relayer-rs"
+path = "src/main.rs"
+
 [dependencies]
 anchor-client = { version = "0.30.1", features = ["async"] }
 dotenv = "0.15.0"
