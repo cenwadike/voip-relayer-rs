@@ -142,19 +142,21 @@ async fn main() {
     ",
     );
 
-    let _ = run_relayer(
-        &eth_wss_rpc_endpoint,
-        &eth_http_rpc_endpoint,
-        &eth_voip_bridge_address,
-        &eth_admin_private_key,
-        &sol_rpc_endpoint,
-        &sol_voip_token_mint,
-        &sol_admin_pubkey,
-        &sol_admin_private_key,
-        &sol_admin_keypair,
-        &sol_voip_migration_address,
-    )
-    .await;
+    loop {
+        let _ = run_relayer(
+            &eth_wss_rpc_endpoint,
+            &eth_http_rpc_endpoint,
+            &eth_voip_bridge_address,
+            &eth_admin_private_key,
+            &sol_rpc_endpoint,
+            &sol_voip_token_mint,
+            &sol_admin_pubkey,
+            &sol_admin_private_key,
+            &sol_admin_keypair,
+            &sol_voip_migration_address,
+        )
+        .await;
+    }
 }
 
 async fn run_relayer(
@@ -210,7 +212,7 @@ async fn run_relayer(
         Ok(address) => Contract::from_json(
             http_web3.eth(),
             address,
-            include_bytes!("../artifacts/eth/bridge/bridge.json")
+            include_bytes!("../artifacts/eth/bridge/bridge.json"),
         )?,
         Err(err) => panic!(
             "
